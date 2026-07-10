@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VPNGate 节点浏览器 · OpenVPN → Mihomo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B0F17'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%232DD4BF' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%232DD4BF'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0B0F17;
+    --surface:#131A26;
+    --surface-2:#1B2434;
+    --surface-hover:#212C40;
+    --border:#263145;
+    --border-soft:#1B2434;
+    --text:#EAF0F7;
+    --text-muted:#8996AC;
+    --text-faint:#5C6A82;
+    --accent:#2DD4BF;
+    --accent-strong:#14B8A6;
+    --accent-soft:rgba(45,212,191,0.14);
+    --danger:#F87171;
+    --danger-soft:rgba(248,113,113,0.12);
+    --warning:#FBBF24;
+    --proto-tcp:#60A5FA;
+    --tier-fast:#4ADE80;
+    --tier-mid:#FBBF24;
+    --tier-warm:#FB923C;
+    --tier-slow:#F87171;
+    --radius:12px;
+    --radius-sm:7px;
+    --font-display:'Space Grotesk','PingFang SC','Microsoft YaHei',sans-serif;
+    --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    --font-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  html{background:var(--bg);}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    font-size:14px;
+    line-height:1.5;
+    overflow-x:hidden;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  a{color:var(--accent);}
+  ::selection{background:var(--accent-soft);}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:30;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    padding:16px 24px;
+    background:rgba(11,15,23,0.94);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px var(--accent-soft);flex-shrink:0;}
+  .brand h1{
+    font-family:var(--font-display);font-size:19px;font-weight:600;letter-spacing:-0.01em;margin:0;
+  }
+  .brand p{margin:2px 0 0;font-size:12px;color:var(--text-muted);}
+  .status-cluster{display:flex;align-items:center;gap:14px;font-family:var(--font-mono);font-size:12px;color:var(--text-muted);}
+  .status-cluster .dot-ok{color:var(--tier-fast);}
+  .status-cluster .dot-bad{color:var(--danger);}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    position:fixed;top:65px;left:0;right:0;z-index:29;width:100%;
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);
+  }
+  .toolbar input[type=search],.toolbar select{
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    padding:8px 12px;border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-body);
+    min-height:34px;
+  }
+  .toolbar input[type=search]{flex:1 1 220px;min-width:160px;}
+  .toolbar select{flex:0 0 auto;}
+  .toolbar input::placeholder{color:var(--text-faint);}
+  .spacer{flex:1;}
+  .count-badge{
+    font-family:var(--font-mono);font-size:12px;color:var(--text-muted);
+    padding:6px 10px;border:1px solid var(--border);border-radius:999px;white-space:nowrap;
+  }
+
+  /* ---------- buttons ---------- */
+  button{font-family:var(--font-body);cursor:pointer;}
+  .btn{
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    padding:8px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;
+    transition:background .15s,border-color .15s,color .15s;white-space:nowrap;
+  }
+  .btn:hover{background:var(--surface-hover);border-color:var(--accent);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn:disabled:hover{background:var(--surface-2);border-color:var(--border);}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#06201C;font-weight:600;}
+  .btn-primary:hover{background:var(--accent-strong);border-color:var(--accent-strong);}
+  .btn-ghost{background:transparent;}
+  .btn-sm{padding:5px 10px;font-size:12px;}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  .icon-btn{
+    background:transparent;border:none;color:var(--text-muted);font-size:20px;line-height:1;
+    padding:4px 8px;border-radius:6px;
+  }
+  .icon-btn:hover{color:var(--text);background:var(--surface-2);}
+
+  /* ---------- main / list ---------- */
+  main{padding:117px 0 12px;max-width:1280px;margin:0 auto;width:100%;flex:1 0 auto;}
+  .banner{
+    margin:16px 24px;padding:12px 16px;border-radius:var(--radius-sm);
+    background:var(--danger-soft);border:1px solid rgba(248,113,113,.35);color:#FFD9D9;font-size:13px;
+  }
+  .empty{margin:60px 24px;text-align:center;color:var(--text-muted);font-size:14px;}
+  .loading-row{margin:24px;color:var(--text-muted);font-family:var(--font-mono);font-size:13px;}
+
+  .table-scroll{
+    overflow-x:auto;
+    width:100vw;
+    margin-left:calc(50% - 50vw);
+    margin-right:calc(50% - 50vw);
+    -webkit-overflow-scrolling:touch;
+  }
+  .table-scroll::-webkit-scrollbar{height:8px;}
+  .table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+  .table-scroll::-webkit-scrollbar-track{background:transparent;}
+
+  .table-head-fixed{
+    position:fixed;left:0;right:0;top:117px;z-index:28;
+    overflow:hidden;background:var(--surface);border-bottom:1px solid var(--border);
+  }
+
+  .row{
+    display:grid;
+    grid-template-columns:
+      minmax(28px,0fr) minmax(58px,0fr) minmax(150px,1.4fr) minmax(100px,0fr)
+      minmax(70px,0fr) minmax(120px,0.6fr) minmax(65px,0fr) minmax(110px,0fr)
+      minmax(100px,0fr) minmax(85px,0fr) minmax(240px,2fr) minmax(200px,1.8fr)
+      minmax(70px,0fr) minmax(160px,0fr);
+    align-items:center;gap:0;
+    padding:11px 24px;border-bottom:1px solid var(--border-soft);
+  }
+  .row-head{
+    font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--text-faint);background:var(--surface);border-bottom:none;
+  }
+  .row-head .cell{cursor:default;}
+  .row-body:hover{background:var(--surface-2);}
+  .cell{padding:3px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  .cell-country{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12.5px;}
+  .cell-host{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .cell-host .ip{font-family:var(--font-mono);font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;}
+  .cell-host .hostname{font-size:11px;color:var(--text-faint);overflow:hidden;text-overflow:ellipsis;}
+  .cell-ping{font-family:var(--font-mono);font-size:13px;display:flex;align-items:center;}
+  .cell-score{font-family:var(--font-mono);font-size:12.5px;color:var(--text-muted);}
+  .cell-sessions,.cell-uptime,.cell-users,.cell-traffic{font-family:var(--font-mono);font-size:12px;color:var(--text-muted);}
+  .cell-operator{font-size:12px;color:var(--text-muted);}
+  .cell-message{font-size:12px;color:var(--text-muted);}
+  .cell-protocol{display:flex;align-items:center;}
+  .cell-actions{display:flex;justify-content:flex-end;align-items:center;gap:6px;}
+
+  .proto-badge{
+    font-family:var(--font-mono);font-size:10px;font-weight:700;
+    padding:3px 6px;border-radius:5px;letter-spacing:.03em;flex-shrink:0;
+    border:1px solid var(--border);color:var(--text-muted);background:var(--surface-2);
+  }
+  .proto-badge.proto-udp{color:var(--warning);border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.12);}
+  .proto-badge.proto-tcp{color:var(--proto-tcp);border-color:rgba(96,165,250,.4);background:rgba(96,165,250,.12);}
+
+  .tier-badge{
+    font-family:var(--font-mono);font-size:11.5px;font-weight:600;
+    padding:2px 7px;border-radius:5px;display:inline-block;border:1px solid currentColor;
+  }
+  .tier-badge.fast{color:var(--tier-fast);background:rgba(74,222,128,.12);}
+  .tier-badge.mid{color:var(--tier-mid);background:rgba(251,191,36,.12);}
+  .tier-badge.warm{color:var(--tier-warm);background:rgba(251,146,60,.12);}
+  .tier-badge.slow{color:var(--tier-slow);background:rgba(248,113,113,.12);}
+
+  .ping-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;flex-shrink:0;}
+  .ping-dot.fast{background:var(--tier-fast);box-shadow:0 0 7px rgba(74,222,128,.7);}
+  .ping-dot.mid{background:var(--tier-mid);box-shadow:0 0 7px rgba(251,191,36,.6);}
+  .ping-dot.warm{background:var(--tier-warm);box-shadow:0 0 7px rgba(251,146,60,.6);}
+  .ping-dot.slow{background:var(--tier-slow);box-shadow:0 0 7px rgba(248,113,113,.6);}
+
+  .speed-wrap{display:flex;flex-direction:column;gap:4px;width:100%;}
+  .speed-label{font-family:var(--font-mono);font-size:12.5px;}
+  .speed-track{display:block;width:100%;height:5px;background:var(--surface-2);border-radius:3px;overflow:hidden;}
+  .speed-fill{display:block;height:100%;background:linear-gradient(90deg,var(--accent-strong),var(--accent));border-radius:3px;}
+
+  input[type=checkbox]{
+    width:16px;height:16px;accent-color:var(--accent);cursor:pointer;
+  }
+
+  /* ---------- responsive card mode ---------- */
+  @media (max-width:900px){
+    .table-scroll{width:auto;margin-left:0;margin-right:0;}
+    .table-head-fixed{display:none;}
+    .row-body{
+      display:block;margin:12px 16px;padding:14px 16px;
+      border:1px solid var(--border);border-radius:var(--radius);
+    }
+    .row-body .cell{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;
+      white-space:normal;padding:7px 0;border-bottom:1px dashed var(--border-soft);
+    }
+    .row-body .cell:last-child{border-bottom:none;}
+    .row-body .cell::before{
+      content:attr(data-label);font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);
+      text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;
+    }
+    .cell-checkbox::before,.cell-actions::before{content:'';}
+    .cell-actions{justify-content:flex-end;gap:8px;}
+    .cell-host{align-items:flex-end;text-align:right;}
+    .cell-sessions,.cell-uptime,.cell-users,.cell-traffic{text-align:right;}
+    .speed-wrap{align-items:flex-end;}
+  }
+  @media (max-width:480px){
+    .modal-overlay{padding:10px;}
+    .modal-header,.modal-tabs,.modal-body{padding-left:14px;padding-right:14px;}
+  }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(5,8,14,.74);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .modal-overlay[hidden]{display:none;}
+  .modal{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    width:min(780px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;
+    box-shadow:0 24px 70px rgba(0,0,0,.55);
+  }
+  .modal-header{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+    padding:16px 20px;border-bottom:1px solid var(--border);
+  }
+  .modal-header h2{font-family:var(--font-display);font-size:16px;margin:0;font-weight:600;}
+  .modal-header .sub{font-size:12px;color:var(--text-muted);margin-top:3px;font-family:var(--font-mono);}
+  .modal-tabs{display:flex;gap:4px;padding:12px 20px 0;}
+  .tab{background:none;border:none;color:var(--text-muted);padding:8px 14px;border-radius:7px 7px 0 0;font-size:13px;font-weight:500;}
+  .tab.active{color:var(--text);background:var(--bg);}
+  .modal-body{padding:16px 20px 20px;overflow-y:auto;flex:1;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .panel-actions{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  textarea{
+    width:100%;min-height:380px;background:var(--bg);color:var(--text);
+    border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;
+    font-family:var(--font-mono);font-size:12.5px;line-height:1.6;resize:vertical;
+  }
+  .warnings{
+    background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:#FDE4A6;
+    padding:10px 12px;border-radius:var(--radius-sm);font-size:12.5px;margin-bottom:10px;
+  }
+  .warnings[hidden]{display:none;}
+  .warnings ul{margin:4px 0 0;padding-left:18px;}
+
+  /* ---------- footer / toast ---------- */
+  .footer{
+    max-width:1280px;margin:0 auto;padding:16px 24px;color:var(--text-faint);font-size:12px;
+    border-top:1px solid var(--border-soft);width:100%;flex-shrink:0;
+  }
+  .toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:200;max-width:320px;}
+  .toast{
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;
+    opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease;
+    box-shadow:0 8px 26px rgba(0,0,0,.4);
+  }
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast-success{border-left:3px solid var(--accent);}
+  .toast-error{border-left:3px solid var(--danger);}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <div>
+      <h1>VPNGate 节点浏览器</h1>
+      <p>OpenVPN 节点列表 · 一键转换为 Mihomo 配置段</p>
+    </div>
+  </div>
+  <div class="status-cluster">
+    <span id="statusText">正在连接 vpngate.net…</span>
+    <button id="refreshBtn" class="btn btn-sm">↻ 刷新</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="search" id="searchInput" placeholder="搜索 主机名 / IP / 国家 / 运营者…" />
+  <select id="countrySelect"><option value="">全部国家</option></select>
+  <select id="sortSelect">
+    <option value="score-desc">综合评分 · 从高到低</option>
+    <option value="ping-asc">延迟 Ping · 从低到高</option>
+    <option value="speed-desc">速度 · 从高到低</option>
+    <option value="numSessions-desc">在线人数 · 从多到少</option>
+    <option value="uptime-desc">运行时长 · 从长到短</option>
+  </select>
+  <span class="spacer"></span>
+  <span class="count-badge" id="countBadge">0 个节点</span>
+  <button id="bulkExportBtn" class="btn" disabled>批量导出 Mihomo (0)</button>
+</div>
+
+<div class="table-head-fixed" id="tableHeadFixed">
+  <div class="row row-head" id="listHead" hidden>
+    <span class="cell cell-checkbox"><input type="checkbox" id="selectAllCheckbox" title="全选当前筛选结果" /></span>
+    <span class="cell">国家</span>
+    <span class="cell">主机 / IP</span>
+    <span class="cell">评分</span>
+    <span class="cell">Ping</span>
+    <span class="cell">速度</span>
+    <span class="cell">在线会话</span>
+    <span class="cell">运行时间</span>
+    <span class="cell">累积用户数</span>
+    <span class="cell">累积流量</span>
+    <span class="cell">运营者</span>
+    <span class="cell">说明</span>
+    <span class="cell">协议</span>
+    <span class="cell cell-actions">操作</span>
+  </div>
+</div>
+
+<main>
+  <div id="banner" class="banner" hidden></div>
+  <div id="loadingRow" class="loading-row">正在获取节点列表…</div>
+
+  <div class="table-scroll" id="tableScroll">
+    <div id="list"></div>
+  </div>
+  <div id="emptyState" class="empty" hidden>没有匹配的节点,试试调整搜索或筛选条件。</div>
+</main>
+
+<footer class="footer">
+  数据来源 <a href="https://www.vpngate.net" target="_blank" rel="noopener">vpngate.net</a>(筑波大学 VPN Gate 学术实验项目,请遵守当地法律法规使用)
+  · Mihomo OpenVPN 字段参考 <a href="https://wiki.metacubex.one/config/proxies/openvpn/" target="_blank" rel="noopener">wiki.metacubex.one</a>
+  · 本工具与上述项目均无官方关联,仅为第三方转换/浏览界面
+</footer>
+
+<!-- 单节点详情弹窗 -->
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modalTitle">节点详情</h2>
+        <div class="sub" id="modalSub"></div>
+      </div>
+      <button class="icon-btn" id="modalClose" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="tab active" data-tab="ovpn">OpenVPN 配置</button>
+      <button class="tab" data-tab="mihomo">Mihomo 配置段</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-panel active" id="tabOvpn">
+        <div class="panel-actions">
+          <button class="btn btn-primary btn-sm" id="copyOvpnBtn">复制到剪贴板</button>
+          <button class="btn btn-sm" id="downloadOvpnBtn">下载 .ovpn</button>
+        </div>
+        <textarea id="ovpnText" readonly spellcheck="false"></textarea>
+      </div>
+      <div class="tab-panel" id="tabMihomo">
+        <div class="warnings" id="mihomoWarnings" hidden></div>
+        <div class="panel-actions">
+          <button class="btn btn-primary btn-sm" id="copyMihomoBtn">复制到剪贴板</button>
+          <button class="btn btn-sm" id="downloadMihomoBtn">下载 .yaml</button>
+        </div>
+        <textarea id="mihomoText" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 批量导出弹窗 -->
+<div class="modal-overlay" id="bulkModalOverlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2>批量导出 Mihomo 配置</h2>
+        <div class="sub" id="bulkSub"></div>
+      </div>
+      <button class="icon-btn" id="bulkModalClose" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="warnings" id="bulkWarnings" hidden></div>
+      <div class="panel-actions">
+        <button class="btn btn-primary btn-sm" id="copyBulkBtn">复制到剪贴板</button>
+        <button class="btn btn-sm" id="downloadBulkBtn">下载 .yaml</button>
+      </div>
+      <textarea id="bulkText" spellcheck="false"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ==================== 工具函数 ====================
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function flagEmoji(code) {
+    if (!code) return '🌐';
+    const cc = String(code).toUpperCase();
+    if (!/^[A-Z]{2}$/.test(cc)) return '🌐';
+    const points = Array.from(cc).map((c) => 127397 + c.charCodeAt(0));
+    return String.fromCodePoint.apply(String, points);
+  }
+
+  function formatSpeed(bps) {
+    const mbps = bps / 1e6;
+    if (mbps >= 100) return mbps.toFixed(0) + ' Mbps';
+    return mbps.toFixed(1) + ' Mbps';
+  }
+
+  function formatBytes(bytes) {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    let v = Number(bytes) || 0;
+    let i = 0;
+    while (v >= 1024 && i < units.length - 1) {
+      v /= 1024;
+      i++;
+    }
+    return (v >= 100 ? v.toFixed(0) : v.toFixed(1)) + ' ' + units[i];
+  }
+
+  function formatDuration(ms) {
+    const totalMinutes = Math.floor((Number(ms) || 0) / 60000);
+    const days = Math.floor(totalMinutes / 1440);
+    const hours = Math.floor((totalMinutes % 1440) / 60);
+    const minutes = totalMinutes % 60;
+    if (days > 0) return days + ' 天 ' + hours + ' 小时';
+    if (hours > 0) return hours + ' 小时 ' + minutes + ' 分钟';
+    return minutes + ' 分钟';
+  }
+
+  function formatNumber(n) {
+    return Number(n || 0).toLocaleString('zh-CN');
+  }
+
+  function tierOf(v) {
+    const n = Number(v) || 0;
+    if (n < 50) return 'fast';
+    if (n < 100) return 'mid';
+    if (n < 150) return 'warm';
+    return 'slow';
+  }
+
+  function keyOf(server) {
+    return server.hostName + '|' + server.ip;
+  }
+
+  function safeDecodeBase64(b64) {
+    try {
+      const cleaned = String(b64 || '').replace(/\s+/g, '');
+      const binary = atob(cleaned);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (err) {
+      return '# 无法解码该节点的配置数据: ' + err.message;
+    }
+  }
+
+  // ==================== OpenVPN 配置解析 ====================
+  function parseOvpnConfig(raw) {
+    const lines = raw.split(/\r\n|\r|\n/);
+    const result = {
+      remoteHost: null, remotePort: null, proto: null,
+      cipher: null, auth: null, compLzo: null, dev: null,
+      ca: null, cert: null, key: null, tlsCrypt: null, tlsAuth: null,
+      keyDirection: null, authUserPass: false, mtu: null,
+      ping: null, pingRestart: null,
+    };
+
+    let block = null;
+    let blockLines = [];
+    const blockTagMap = {
+      '<ca>': 'ca', '</ca>': 'ca',
+      '<cert>': 'cert', '</cert>': 'cert',
+      '<key>': 'key', '</key>': 'key',
+      '<tls-crypt>': 'tlsCrypt', '</tls-crypt>': 'tlsCrypt',
+      '<tls-auth>': 'tlsAuth', '</tls-auth>': 'tlsAuth',
+    };
+
+    for (const rawLine of lines) {
+      const trimmed = rawLine.trim();
+
+      if (Object.prototype.hasOwnProperty.call(blockTagMap, trimmed)) {
+        const isClose = trimmed.indexOf('</') === 0;
+        const key = blockTagMap[trimmed];
+        if (!isClose) {
+          block = key;
+          blockLines = [];
+        } else {
+          result[key] = blockLines.join('\n').trim();
+          block = null;
+        }
+        continue;
+      }
+
+      if (block) {
+        blockLines.push(rawLine.replace(/\r$/, ''));
+        continue;
+      }
+
+      if (!trimmed || trimmed.charAt(0) === '#' || trimmed.charAt(0) === ';') continue;
+
+      const spaceIdx = trimmed.indexOf(' ');
+      const directive = (spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx)).toLowerCase();
+      const args = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx + 1).trim();
+
+      switch (directive) {
+        case 'remote': {
+          const p = args.split(/\s+/);
+          result.remoteHost = p[0];
+          if (p[1]) result.remotePort = p[1];
+          break;
+        }
+        case 'proto': {
+          const p = args.toLowerCase();
+          if (p.indexOf('tcp') === 0) result.proto = 'tcp';
+          else if (p.indexOf('udp') === 0) result.proto = 'udp';
+          break;
+        }
+        case 'port':
+          if (!result.remotePort) result.remotePort = args.trim();
+          break;
+        case 'cipher':
+          result.cipher = args.trim();
+          break;
+        case 'data-ciphers':
+          if (!result.cipher) result.cipher = args.split(':')[0].trim();
+          break;
+        case 'auth':
+          result.auth = args.trim();
+          break;
+        case 'comp-lzo':
+          result.compLzo = args.trim() || 'yes';
+          break;
+        case 'dev':
+        case 'dev-type': {
+          const d = args.toLowerCase();
+          if (d.indexOf('tun') === 0) result.dev = 'tun';
+          else if (d.indexOf('tap') === 0) result.dev = 'tap';
+          break;
+        }
+        case 'key-direction':
+          result.keyDirection = args.trim();
+          break;
+        case 'auth-user-pass':
+          result.authUserPass = true;
+          break;
+        case 'tun-mtu':
+        case 'link-mtu':
+          if (!result.mtu) result.mtu = args.trim();
+          break;
+        case 'ping':
+          result.ping = args.trim();
+          break;
+        case 'ping-restart':
+          result.pingRestart = args.trim();
+          break;
+        case 'keepalive': {
+          // keepalive <ping> <ping-restart> 是 ping/ping-restart 的简写指令
+          const p = args.split(/\s+/);
+          if (p[0]) result.ping = p[0];
+          if (p[1]) result.pingRestart = p[1];
+          break;
+        }
+        default:
+          break;
+      }
+    }
+    return result;
+  }
+
+  // ==================== Mihomo openvpn 配置段生成 ====================
+  const SUPPORTED_CIPHERS = ['AES-128-GCM', 'AES-256-GCM', 'AES-128-CBC', 'AES-256-CBC', 'CHACHA20-POLY1305'];
+  const SUPPORTED_AUTH = ['MD5', 'SHA1', 'SHA256', 'SHA384', 'SHA512'];
+
+  function yamlQuote(str) {
+    return '"' + String(str).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  }
+
+  function yamlBlock(value, indent) {
+    const pad = ' '.repeat(indent);
+    return String(value).replace(/\r\n/g, '\n').split('\n').map((l) => pad + l).join('\n');
+  }
+
+  function buildMihomoProxySegment(server, parsed) {
+    const warnings = [];
+    const lines = [];
+    const name = `VPNGate-${server.countryShort || '??'}-${server.ip}`;
+
+    lines.push(`- name: ${yamlQuote(name)}`);
+    lines.push(`  type: openvpn`);
+    lines.push(`  server: ${parsed.remoteHost || server.ip}`);
+    lines.push(`  port: ${parsed.remotePort || 1194}`);
+
+    const proto = parsed.proto || 'udp';
+    lines.push(`  proto: ${proto}`);
+    // 注意: 这里的 udp 和上面的 proto 是两个完全不同的字段。
+    // proto 指隧道本身连接服务器所用的传输协议(对应 .ovpn 里的 proto 指令);
+    // udp 是 mihomo 所有代理类型通用的字段,表示"是否允许 UDP 应用流量(DNS/游戏/QUIC等)通过该节点转发"。
+    // OpenVPN 建立的是完整的 TUN 隧道,一旦连接建立,不论 proto 是 tcp 还是 udp,隧道内都能正常承载 UDP 应用流量,
+    // 因此这里恒为 true,不应跟随 proto 变化(这是早前版本的一个错误,已修正)。
+    lines.push(`  udp: true`);
+
+    if (parsed.authUserPass) {
+      lines.push(`  # 该配置需要用户名/密码认证 (auth-user-pass),请自行填写凭据`);
+      lines.push(`  # username: "your-username"`);
+      lines.push(`  # password: "your-password"`);
+    }
+
+    if (parsed.cipher) {
+      if (SUPPORTED_CIPHERS.indexOf(parsed.cipher.toUpperCase()) === -1) {
+        warnings.push(`原始 cipher "${parsed.cipher}" 不在 mihomo 已知支持列表(${SUPPORTED_CIPHERS.join('/')})中,请留意兼容性`);
+      }
+      lines.push(`  cipher: ${parsed.cipher}`);
+    }
+    if (parsed.auth) {
+      if (SUPPORTED_AUTH.indexOf(parsed.auth.toUpperCase()) === -1) {
+        warnings.push(`原始 auth "${parsed.auth}" 不在 mihomo 已知支持列表(${SUPPORTED_AUTH.join('/')})中,请留意兼容性`);
+      }
+      lines.push(`  auth: ${parsed.auth}`);
+    }
+
+    if (parsed.ca) {
+      lines.push(`  ca: |`);
+      lines.push(yamlBlock(parsed.ca, 4));
+    } else {
+      warnings.push('未在原始配置中找到 <ca> 证书块,而 mihomo 要求必须提供 ca 字段,请检查该节点配置');
+    }
+
+    if (parsed.cert) {
+      lines.push(`  cert: |`);
+      lines.push(yamlBlock(parsed.cert, 4));
+    }
+    if (parsed.key) {
+      lines.push(`  key: |`);
+      lines.push(yamlBlock(parsed.key, 4));
+    }
+    if (!parsed.cert && !parsed.key && !parsed.authUserPass) {
+      warnings.push('未找到客户端证书(cert/key),也未启用 auth-user-pass,请确认该节点的认证方式');
+    }
+
+    if (parsed.tlsCrypt) {
+      lines.push(`  tls-crypt: |`);
+      lines.push(yamlBlock(parsed.tlsCrypt, 4));
+    } else if (parsed.tlsAuth) {
+      lines.push(`  # 注意: 原配置使用的是 tls-auth(独立 HMAC 签名密钥${parsed.keyDirection ? ', key-direction ' + parsed.keyDirection : ''}),而非 tls-crypt`);
+      lines.push(`  # mihomo 文档目前只公开 tls-crypt 字段,以下为尽力映射,如连接异常请对照最新 mihomo 文档核实`);
+      lines.push(`  tls-crypt: |`);
+      lines.push(yamlBlock(parsed.tlsAuth, 4));
+      warnings.push('原始配置使用 tls-auth 而非 tls-crypt,已尽力映射,请手动确认兼容性');
+    }
+
+    if (parsed.compLzo) {
+      lines.push(`  comp-lzo: ${/^(yes|no|adaptive)$/i.test(parsed.compLzo) ? parsed.compLzo : 'yes'}`);
+    }
+
+    const dev = parsed.dev || 'tun';
+    if (dev === 'tap') {
+      warnings.push('原始配置使用 dev tap(二层网桥模式),mihomo 目前仅支持 tun,该节点可能无法通过 mihomo 使用');
+    }
+    // dev 字段不再写入配置: mihomo 只支持 tun 且这本身就是默认值,显式声明没有意义
+
+    if (parsed.mtu) lines.push(`  mtu: ${parsed.mtu}`);
+    if (parsed.ping) lines.push(`  ping: ${parsed.ping}`);
+    if (parsed.pingRestart) lines.push(`  ping-restart: ${parsed.pingRestart}`);
+
+    return { yaml: lines.join('\n'), warnings, name };
+  }
+
+  // ==================== 应用状态 ====================
+  const state = {
+    servers: [],
+    filtered: [],
+    search: '',
+    country: '',
+    sortValue: 'score-desc',
+    selected: new Set(),
+    updatedAt: null,
+  };
+
+  const el = (id) => document.getElementById(id);
+
+  // ==================== 数据获取 ====================
+  async function fetchServers(force) {
+    el('refreshBtn').disabled = true;
+    el('statusText').textContent = force ? '正在强制刷新…' : '正在连接 vpngate.net…';
+    hideBanner();
+    try {
+      const res = await fetch('/api/servers' + (force ? '?refresh=1' : ''), { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.message || ('HTTP ' + res.status));
+      }
+      state.servers = (data.servers || []).map((s) => {
+        try {
+          const raw = safeDecodeBase64(s.configDataBase64);
+          s.detectedProto = parseOvpnConfig(raw).proto || 'udp';
+        } catch (err) {
+          s.detectedProto = 'udp';
+        }
+        return s;
+      });
+      state.updatedAt = data.updatedAt;
+      state.selected.clear();
+      populateCountryOptions();
+      applyFiltersAndRender();
+      const timeStr = state.updatedAt ? new Date(state.updatedAt).toLocaleString('zh-CN') : '未知';
+      el('statusText').innerHTML = '<span class="dot-ok">●</span> 已连接 · 共 ' + state.servers.length + ' 个节点 · 更新于 ' + escapeHtml(timeStr);
+      el('loadingRow').hidden = true;
+      el('listHead').hidden = state.servers.length === 0;
+    } catch (err) {
+      el('statusText').innerHTML = '<span class="dot-bad">●</span> 连接失败';
+      el('loadingRow').hidden = true;
+      showBanner('无法获取 vpngate.net 的节点列表: ' + escapeHtml(err.message) + '。这可能是网络问题或该站点暂时无法访问,请稍后点击右上角"刷新"重试。');
+    } finally {
+      el('refreshBtn').disabled = false;
+      updateFixedOffsets();
+    }
+  }
+
+  function showBanner(html) {
+    const b = el('banner');
+    b.innerHTML = html;
+    b.hidden = false;
+  }
+  function hideBanner() {
+    el('banner').hidden = true;
+  }
+
+  // ==================== 筛选 / 排序 / 渲染 ====================
+  function populateCountryOptions() {
+    const counts = new Map();
+    state.servers.forEach((s) => {
+      const key = s.countryShort || '??';
+      const cur = counts.get(key) || { label: s.countryLong || key, count: 0 };
+      cur.count++;
+      counts.set(key, cur);
+    });
+    const entries = Array.from(counts.entries()).sort((a, b) => a[1].label.localeCompare(b[1].label));
+    const select = el('countrySelect');
+    const prevValue = select.value;
+    select.innerHTML = '<option value="">全部国家 (' + state.servers.length + ')</option>';
+    entries.forEach(([code, info]) => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = flagEmoji(code) + ' ' + info.label + ' (' + info.count + ')';
+      select.appendChild(opt);
+    });
+    select.value = prevValue && counts.has(prevValue) ? prevValue : '';
+    state.country = select.value;
+  }
+
+  function applyFiltersAndRender() {
+    const q = state.search.trim().toLowerCase();
+    let list = state.servers.filter((s) => {
+      if (state.country && s.countryShort !== state.country) return false;
+      if (!q) return true;
+      return (
+        (s.hostName || '').toLowerCase().indexOf(q) !== -1 ||
+        (s.ip || '').toLowerCase().indexOf(q) !== -1 ||
+        (s.countryLong || '').toLowerCase().indexOf(q) !== -1 ||
+        (s.countryShort || '').toLowerCase().indexOf(q) !== -1 ||
+        (s.operator || '').toLowerCase().indexOf(q) !== -1
+      );
+    });
+
+    const [sortKey, sortDir] = state.sortValue.split('-');
+    const dir = sortDir === 'asc' ? 1 : -1;
+    list = list.slice().sort((a, b) => {
+      const ka = Number(a[sortKey]) || 0;
+      const kb = Number(b[sortKey]) || 0;
+      if (ka < kb) return -1 * dir;
+      if (ka > kb) return 1 * dir;
+      return 0;
+    });
+
+    state.filtered = list;
+    renderList();
+    updateCounts();
+  }
+
+  function renderList() {
+    const html = state.filtered.map((s) => renderRow(s)).join('');
+    el('list').innerHTML = html;
+    el('emptyState').hidden = state.filtered.length !== 0;
+  }
+
+  const SPEED_BAR_MAX_MBPS = 1000; // 速度条固定刻度: 0-1000 Mbps,超过按满格显示
+  function speedBarPercent(bps) {
+    const mbps = (Number(bps) || 0) / 1e6;
+    return Math.max(2, Math.min(100, Math.round((mbps / SPEED_BAR_MAX_MBPS) * 100)));
+  }
+
+  function renderRow(s) {
+    const k = keyOf(s);
+    const checked = state.selected.has(k) ? 'checked' : '';
+    const pingTierName = tierOf(s.ping);
+    const sessionsTierName = tierOf(s.numSessions);
+    const speedPct = speedBarPercent(s.speed);
+    const hostSafe = escapeHtml(s.hostName);
+    const ipSafe = escapeHtml(s.ip);
+    const opSafe = escapeHtml(s.operator || '—');
+    const msgSafe = escapeHtml(s.message || '—');
+    const countryLabel = escapeHtml(s.countryLong || s.countryShort || '未知');
+    const proto = (s.detectedProto === 'tcp') ? 'tcp' : 'udp';
+
+    return (
+      '<div class="row row-body" data-key="' + escapeHtml(k) + '">' +
+        '<span class="cell cell-checkbox"><input type="checkbox" class="row-check" data-key="' + escapeHtml(k) + '" ' + checked + ' /></span>' +
+        '<span class="cell cell-country" data-label="国家" title="' + countryLabel + '">' + flagEmoji(s.countryShort) + ' ' + escapeHtml(s.countryShort || '??') + '</span>' +
+        '<span class="cell cell-host" data-label="主机/IP">' +
+          '<span class="ip">' + ipSafe + '</span>' +
+          '<span class="hostname">' + hostSafe + '</span>' +
+        '</span>' +
+        '<span class="cell cell-score" data-label="评分">' + formatNumber(s.score) + '</span>' +
+        '<span class="cell cell-ping" data-label="Ping"><span class="ping-dot ' + pingTierName + '"></span>' + formatNumber(s.ping) + ' ms</span>' +
+        '<span class="cell" data-label="速度">' +
+          '<span class="speed-wrap">' +
+            '<span class="speed-label">' + formatSpeed(s.speed) + '</span>' +
+            '<span class="speed-track"><span class="speed-fill" style="width:' + speedPct + '%"></span></span>' +
+          '</span>' +
+        '</span>' +
+        '<span class="cell cell-sessions" data-label="在线会话"><span class="tier-badge ' + sessionsTierName + '">' + formatNumber(s.numSessions) + '</span></span>' +
+        '<span class="cell cell-uptime" data-label="运行时间">' + formatDuration(s.uptime) + '</span>' +
+        '<span class="cell cell-users" data-label="累积用户数">' + formatNumber(s.totalUsers) + '</span>' +
+        '<span class="cell cell-traffic" data-label="累积流量">' + formatBytes(s.totalTraffic) + '</span>' +
+        '<span class="cell cell-operator" data-label="运营者" title="' + opSafe + '">' + opSafe + '</span>' +
+        '<span class="cell cell-message" data-label="说明" title="' + msgSafe + '">' + msgSafe + '</span>' +
+        '<span class="cell cell-protocol" data-label="协议"><span class="proto-badge proto-' + proto + '">' + proto.toUpperCase() + '</span></span>' +
+        '<span class="cell cell-actions" data-label="">' +
+          '<button class="btn btn-sm view-ovpn-btn" data-key="' + escapeHtml(k) + '">OpenVPN</button>' +
+          '<button class="btn btn-sm view-mihomo-btn" data-key="' + escapeHtml(k) + '">Mihomo</button>' +
+        '</span>' +
+      '</div>'
+    );
+  }
+
+  function updateCounts() {
+    el('countBadge').textContent = state.filtered.length + ' 个节点' + (state.filtered.length !== state.servers.length ? ' (共 ' + state.servers.length + ')' : '');
+    const selCount = state.selected.size;
+    const bulkBtn = el('bulkExportBtn');
+    bulkBtn.textContent = '批量导出 Mihomo (' + selCount + ')';
+    bulkBtn.disabled = selCount === 0;
+
+    const allChecked = state.filtered.length > 0 && state.filtered.every((s) => state.selected.has(keyOf(s)));
+    el('selectAllCheckbox').checked = allChecked;
+  }
+
+  // ==================== 弹窗:节点详情 ====================
+  function showModal(id) {
+    el(id).hidden = false;
+  }
+  function hideModal(id) {
+    el(id).hidden = true;
+  }
+
+  function renderWarnings(targetId, warnings) {
+    const box = el(targetId);
+    if (!warnings || warnings.length === 0) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = '⚠️ 转换提示<ul>' + warnings.map((w) => '<li>' + escapeHtml(w) + '</li>').join('') + '</ul>';
+  }
+
+  function openDetailModal(server, initialTab) {
+    const raw = safeDecodeBase64(server.configDataBase64);
+    const parsed = parseOvpnConfig(raw);
+    const { yaml, warnings } = buildMihomoProxySegment(server, parsed);
+
+    el('modalTitle').textContent = flagEmoji(server.countryShort) + ' ' + (server.countryLong || server.countryShort || '未知地区');
+    el('modalSub').textContent = server.hostName + ' · ' + server.ip;
+
+    el('ovpnText').value = raw;
+    el('mihomoText').value = yamlBlock(yaml, 2);
+    renderWarnings('mihomoWarnings', warnings);
+
+    switchTab(initialTab || 'ovpn');
+    showModal('modalOverlay');
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('#modalOverlay .tab').forEach((btn) => {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+    });
+    el('tabOvpn').classList.toggle('active', tab === 'ovpn');
+    el('tabMihomo').classList.toggle('active', tab === 'mihomo');
+  }
+
+  // ==================== 弹窗:批量导出 ====================
+  function openBulkModal() {
+    const selectedServers = state.servers.filter((s) => state.selected.has(keyOf(s)));
+    if (selectedServers.length === 0) {
+      showToast('请先勾选至少一个节点', 'error');
+      return;
+    }
+    const allWarnings = [];
+    const segments = selectedServers.map((s) => {
+      const raw = safeDecodeBase64(s.configDataBase64);
+      const parsed = parseOvpnConfig(raw);
+      const { yaml, warnings } = buildMihomoProxySegment(s, parsed);
+      warnings.forEach((w) => allWarnings.push('[' + s.countryShort + ' ' + s.ip + '] ' + w));
+      return yaml;
+    });
+    const full = 'proxies:\n' + segments.map((seg) => yamlBlock(seg, 2)).join('\n');
+    el('bulkSub').textContent = '已选 ' + selectedServers.length + ' 个节点';
+    el('bulkText').value = full;
+    renderWarnings('bulkWarnings', allWarnings);
+    showModal('bulkModalOverlay');
+  }
+
+  // ==================== 剪贴板 / 下载 / 提示 ====================
+  function legacyCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  async function copyText(text, successMsg) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        legacyCopy(text);
+      }
+      showToast(successMsg || '已复制到剪贴板', 'success');
+    } catch (err) {
+      try {
+        legacyCopy(text);
+        showToast(successMsg || '已复制到剪贴板', 'success');
+      } catch (err2) {
+        showToast('复制失败,请手动选择文本复制', 'error');
+      }
+    }
+  }
+
+  function downloadText(filename, text) {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('已下载 ' + filename, 'success');
+  }
+
+  function showToast(msg, type) {
+    const container = el('toastContainer');
+    const item = document.createElement('div');
+    item.className = 'toast ' + (type === 'error' ? 'toast-error' : 'toast-success');
+    item.textContent = msg;
+    container.appendChild(item);
+    requestAnimationFrame(() => item.classList.add('show'));
+    setTimeout(() => {
+      item.classList.remove('show');
+      setTimeout(() => item.remove(), 300);
+    }, 2800);
+  }
+
+  // ==================== 事件绑定 ====================
+  function wireEvents() {
+    el('refreshBtn').addEventListener('click', () => fetchServers(true));
+
+    el('searchInput').addEventListener('input', (e) => {
+      state.search = e.target.value;
+      applyFiltersAndRender();
+    });
+    el('countrySelect').addEventListener('change', (e) => {
+      state.country = e.target.value;
+      applyFiltersAndRender();
+    });
+    el('sortSelect').addEventListener('change', (e) => {
+      state.sortValue = e.target.value;
+      applyFiltersAndRender();
+    });
+
+    el('selectAllCheckbox').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        state.filtered.forEach((s) => state.selected.add(keyOf(s)));
+      } else {
+        state.filtered.forEach((s) => state.selected.delete(keyOf(s)));
+      }
+      renderList();
+      updateCounts();
+    });
+
+    el('bulkExportBtn').addEventListener('click', openBulkModal);
+
+    // 事件委托: 行内 checkbox 与 "查看配置" 按钮
+    el('list').addEventListener('change', (e) => {
+      if (e.target.classList.contains('row-check')) {
+        const k = e.target.getAttribute('data-key');
+        if (e.target.checked) state.selected.add(k);
+        else state.selected.delete(k);
+        updateCounts();
+      }
+    });
+    el('list').addEventListener('click', (e) => {
+      const ovpnBtn = e.target.closest('.view-ovpn-btn');
+      const mihomoBtn = e.target.closest('.view-mihomo-btn');
+      const btn = ovpnBtn || mihomoBtn;
+      if (!btn) return;
+      const k = btn.getAttribute('data-key');
+      const server = state.servers.find((s) => keyOf(s) === k);
+      if (server) openDetailModal(server, mihomoBtn ? 'mihomo' : 'ovpn');
+    });
+
+    // 详情弹窗
+    el('modalClose').addEventListener('click', () => hideModal('modalOverlay'));
+    el('modalOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'modalOverlay') hideModal('modalOverlay');
+    });
+    document.querySelectorAll('#modalOverlay .tab').forEach((btn) => {
+      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+    });
+    el('copyOvpnBtn').addEventListener('click', () => copyText(el('ovpnText').value, 'OpenVPN 配置已复制'));
+    el('downloadOvpnBtn').addEventListener('click', () => {
+      const name = (el('modalSub').textContent || 'vpngate').replace(/[^\w.\-]+/g, '_');
+      downloadText(name + '.ovpn', el('ovpnText').value);
+    });
+    el('copyMihomoBtn').addEventListener('click', () => copyText(el('mihomoText').value, 'Mihomo 配置段已复制'));
+    el('downloadMihomoBtn').addEventListener('click', () => {
+      const name = (el('modalSub').textContent || 'vpngate').replace(/[^\w.\-]+/g, '_');
+      downloadText(name + '.mihomo.yaml', el('mihomoText').value);
+    });
+
+    // 批量弹窗
+    el('bulkModalClose').addEventListener('click', () => hideModal('bulkModalOverlay'));
+    el('bulkModalOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'bulkModalOverlay') hideModal('bulkModalOverlay');
+    });
+    el('copyBulkBtn').addEventListener('click', () => copyText(el('bulkText').value, '已复制 ' + state.selected.size + ' 个节点的 Mihomo 配置'));
+    el('downloadBulkBtn').addEventListener('click', () => downloadText('vpngate-mihomo-proxies.yaml', el('bulkText').value));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideModal('modalOverlay');
+        hideModal('bulkModalOverlay');
+      }
+    });
+
+    // 横向滚动同步: 固定表头随数据区域的横向滚动一起移动
+    el('tableScroll').addEventListener(
+      'scroll',
+      () => {
+        el('tableHeadFixed').scrollLeft = el('tableScroll').scrollLeft;
+      },
+      { passive: true }
+    );
+  }
+
+  // ==================== 固定定位布局: 动态测量高度,而不是写死像素值 ====================
+  function updateFixedOffsets() {
+    const topbarEl = document.querySelector('.topbar');
+    const toolbarEl = document.querySelector('.toolbar');
+    const headFixedEl = el('tableHeadFixed');
+    const mainEl = document.querySelector('main');
+    if (!topbarEl || !toolbarEl || !headFixedEl || !mainEl) return;
+
+    const topbarH = topbarEl.offsetHeight;
+    toolbarEl.style.top = topbarH + 'px';
+
+    const toolbarH = toolbarEl.offsetHeight;
+    headFixedEl.style.top = (topbarH + toolbarH) + 'px';
+
+    const headFixedVisible = getComputedStyle(headFixedEl).display !== 'none';
+    const headFixedH = headFixedVisible ? headFixedEl.offsetHeight : 0;
+
+    mainEl.style.paddingTop = (toolbarH + headFixedH) + 'px';
+  }
+
+  function setupFixedOffsetWatchers() {
+    updateFixedOffsets();
+    window.addEventListener('resize', updateFixedOffsets);
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => updateFixedOffsets());
+      ro.observe(document.querySelector('.topbar'));
+      ro.observe(document.querySelector('.toolbar'));
+      ro.observe(el('listHead'));
+    }
+  }
+
+  wireEvents();
+  setupFixedOffsetWatchers();
+  fetchServers(false);
+})();
+</script>
+</body>
+</html>

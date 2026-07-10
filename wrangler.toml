@@ -1,0 +1,10 @@
+name = "vpngate-mihomo-browser"
+main = "worker.js"
+compatibility_date = "2026-07-08"
+
+# 免费额度足够个人使用。如果你有自己的域名并想绑定,
+# 可以在 Cloudflare 控制台的 Workers 路由设置中添加,
+# 或者取消下面的注释并填入你的域名(需先在该账号下托管该域名):
+# routes = [
+#   { pattern = "vpngate.yourdomain.com", custom_domain = true }
+# ]
