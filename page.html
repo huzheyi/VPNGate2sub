@@ -32,6 +32,8 @@
     --tier-slow:#F87171;
     --radius:12px;
     --radius-sm:7px;
+    --favorite-drawer-width:420px;
+    --favorite-table-head-height:61.5px;
     --font-display:'Space Grotesk','PingFang SC','Microsoft YaHei',sans-serif;
     --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
     --font-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
@@ -77,6 +79,7 @@
     position:fixed;top:65px;left:0;right:0;z-index:29;width:100%;
     display:flex;flex-wrap:wrap;gap:10px;align-items:center;
     padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);
+    transition:right .22s ease,width .22s ease;
   }
   .toolbar input[type=search],.toolbar select{
     background:var(--surface-2);border:1px solid var(--border);color:var(--text);
@@ -87,6 +90,7 @@
   .toolbar select{flex:0 0 auto;}
   .toolbar input::placeholder{color:var(--text-faint);}
   .spacer{flex:1;}
+  .toolbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;}
   .count-badge{
     font-family:var(--font-mono);font-size:12px;color:var(--text-muted);
     padding:6px 10px;border:1px solid var(--border);border-radius:999px;white-space:nowrap;
@@ -116,7 +120,7 @@
   .icon-btn:hover{color:var(--text);background:var(--surface-2);}
 
   /* ---------- main / list ---------- */
-  main{padding:117px 0 12px;max-width:1280px;margin:0 auto;width:100%;flex:1 0 auto;}
+  main{padding:117px 0 12px;max-width:1280px;margin:0 auto;width:100%;flex:1 0 auto;transition:width .22s ease,margin .22s ease;}
   .banner{
     margin:16px 24px;padding:12px 16px;border-radius:var(--radius-sm);
     background:var(--danger-soft);border:1px solid rgba(248,113,113,.35);color:#FFD9D9;font-size:13px;
@@ -130,6 +134,7 @@
     margin-left:calc(50% - 50vw);
     margin-right:calc(50% - 50vw);
     -webkit-overflow-scrolling:touch;
+    transition:width .22s ease,margin .22s ease;
   }
   .table-scroll::-webkit-scrollbar{height:8px;}
   .table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
@@ -138,6 +143,7 @@
   .table-head-fixed{
     position:fixed;left:0;right:0;top:117px;z-index:28;
     overflow:hidden;background:var(--surface);border-bottom:1px solid var(--border);
+    transition:right .22s ease;
   }
 
   .row{
@@ -146,7 +152,7 @@
       minmax(28px,0fr) minmax(58px,0fr) minmax(150px,1.4fr) minmax(100px,0fr)
       minmax(70px,0fr) minmax(120px,0.6fr) minmax(65px,0fr) minmax(110px,0fr)
       minmax(100px,0fr) minmax(85px,0fr) minmax(240px,2fr) minmax(200px,1.8fr)
-      minmax(70px,0fr) minmax(160px,0fr);
+      minmax(70px,0fr) minmax(220px,0fr);
     align-items:center;gap:0;
     padding:11px 24px;border-bottom:1px solid var(--border-soft);
   }
@@ -227,6 +233,8 @@
   @media (max-width:480px){
     .modal-overlay{padding:10px;}
     .modal-header,.modal-tabs,.modal-body{padding-left:14px;padding-right:14px;}
+    .toolbar-actions{width:100%;flex-wrap:wrap;}
+    .toolbar-actions .btn{flex:1;}
   }
 
   /* ---------- modal ---------- */
@@ -265,10 +273,150 @@
   .warnings[hidden]{display:none;}
   .warnings ul{margin:4px 0 0;padding-left:18px;}
 
+  /* ---------- subscription favorites ---------- */
+  .favorite-list{display:flex;flex-direction:column;gap:10px;}
+  .favorite-choice{
+    width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:12px 14px;text-align:left;
+  }
+  .favorite-choice strong{display:block;}
+  .favorite-choice small{color:var(--text-muted);font-family:var(--font-mono);}
+  .storage-message{padding:14px;border:1px solid rgba(251,191,36,.3);background:rgba(251,191,36,.08);color:#FDE4A6;border-radius:var(--radius-sm);}
+
+  /* ---------- favorite drawer ---------- */
+  .favorite-drawer{
+    position:fixed;top:var(--favorite-drawer-top,117px);right:0;bottom:var(--favorite-drawer-bottom,0px);z-index:45;
+    width:min(var(--favorite-drawer-width),100vw);display:flex;flex-direction:column;
+    background:var(--surface);border-left:1px solid var(--border);
+    box-shadow:-10px 0 28px rgba(0,0,0,.24);
+    transform:translateX(100%);visibility:hidden;
+    transition:transform .22s ease,visibility .22s,bottom .12s ease-out;
+  }
+  .favorite-drawer.open{transform:translateX(0);visibility:visible;}
+  .drawer-header{
+    height:var(--favorite-table-head-height);min-height:var(--favorite-table-head-height);
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:0 18px;border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .drawer-header h2{font-family:var(--font-display);font-size:17px;margin:0;font-weight:600;}
+  .drawer-controls{padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .drawer-switch-row{display:flex;gap:8px;align-items:center;}
+  .drawer-switch-row select{
+    min-width:0;flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    padding:8px 10px;border-radius:var(--radius-sm);font-size:13px;min-height:36px;
+  }
+  .drawer-icon-actions{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+  .drawer-icon-btn{
+    width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;
+    padding:0;border:1px solid var(--border);border-radius:7px;background:var(--surface-2);
+    color:var(--text-muted);cursor:pointer;transition:color .15s,border-color .15s,background .15s;
+  }
+  .drawer-icon-btn:hover:not(:disabled){color:var(--text);border-color:var(--text-faint);background:var(--surface-hover);}
+  .drawer-icon-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .drawer-icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .drawer-icon-btn.primary{color:var(--accent);border-color:rgba(51,209,122,.35);}
+  .drawer-icon-btn.danger:hover:not(:disabled){color:#fb7185;border-color:rgba(251,113,133,.45);}
+  .drawer-url-row{display:block;margin-top:10px;line-height:1.45;}
+  .drawer-url{
+    display:inline;min-width:0;color:var(--accent);font-family:var(--font-mono);font-size:10.5px;
+    white-space:normal;overflow-wrap:anywhere;word-break:break-all;
+  }
+  .drawer-copy-icon{
+    width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
+    margin-left:3px;padding:0;border:0;background:transparent;color:var(--text-muted);
+    cursor:pointer;border-radius:4px;vertical-align:text-bottom;
+  }
+  .drawer-copy-icon:hover:not(:disabled){color:var(--accent);background:transparent;}
+  .drawer-copy-icon:disabled{opacity:.35;cursor:not-allowed;}
+  .drawer-copy-icon svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+  .drawer-editor{
+    margin-top:12px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);
+    background:var(--bg);
+  }
+  .drawer-editor[hidden]{display:none;}
+  .drawer-editor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .drawer-editor-title{font-size:12px;font-weight:600;color:var(--text);}
+  .drawer-editor-actions{display:flex;gap:5px;}
+  .drawer-editor-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .drawer-editor-field{display:flex;flex-direction:column;gap:5px;min-width:0;}
+  .drawer-editor-field label{font-size:10.5px;color:var(--text-muted);font-family:var(--font-mono);}
+  .drawer-editor-field input{
+    width:100%;min-width:0;min-height:34px;padding:7px 9px;border:1px solid var(--border);
+    border-radius:var(--radius-sm);background:var(--surface-2);color:var(--text);font-size:12px;
+  }
+  .drawer-editor-preview{
+    margin-top:8px;color:var(--text-faint);font-family:var(--font-mono);font-size:9.5px;
+    white-space:normal;overflow-wrap:anywhere;word-break:break-all;
+  }
+  .drawer-batchbar{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:10px 18px;border-bottom:1px solid var(--border);background:var(--bg);flex-shrink:0;
+  }
+  .drawer-select-all{display:flex;align-items:center;gap:7px;margin-right:auto;color:var(--text-muted);font-size:12px;}
+  .drawer-node-list{overflow-y:auto;flex:1;padding:8px 10px 18px;}
+  .drawer-node{
+    display:grid;grid-template-columns:22px minmax(0,1fr) auto;align-items:center;gap:9px;
+    padding:11px 8px;border-bottom:1px solid var(--border-soft);border-radius:6px;
+  }
+  .drawer-node:hover{background:var(--surface-2);}
+  .drawer-node-main{display:block;min-width:0;}
+  .drawer-node-ip{display:block;font-family:var(--font-mono);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .drawer-node-meta{display:block;font-size:10.5px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+  .drawer-node-country{font-size:11px;color:var(--text-muted);font-family:var(--font-mono);}
+  .drawer-empty{padding:48px 24px;text-align:center;color:var(--text-muted);}
+  .drawer-empty strong{display:block;color:var(--text);font-size:14px;margin-bottom:5px;}
+  .drawer-storage-error{margin:14px 18px;}
+  @media (min-width:1101px){
+    body.favorite-drawer-open .toolbar{
+      right:var(--favorite-drawer-width);
+      width:calc(100% - var(--favorite-drawer-width));
+    }
+    body.favorite-drawer-open .table-head-fixed{right:var(--favorite-drawer-width);}
+    body.favorite-drawer-open main{
+      width:calc(100% - var(--favorite-drawer-width));
+      max-width:none;margin-left:0;margin-right:var(--favorite-drawer-width);
+    }
+    body.favorite-drawer-open .table-scroll{
+      width:calc(100vw - var(--favorite-drawer-width));
+      margin-left:0;margin-right:0;
+    }
+  }
+  @media (max-width:700px){
+    .favorite-drawer{top:0;width:100vw;}
+    .drawer-editor-fields{grid-template-columns:1fr;}
+  }
+
+  /* ---------- access gate ---------- */
+  body.auth-locked{overflow:hidden;}
+  .auth-gate{
+    position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;
+    padding:24px;background:rgba(7,10,16,.96);backdrop-filter:blur(12px);
+  }
+  .auth-gate[hidden]{display:none;}
+  .auth-card{
+    width:min(420px,100%);padding:28px;border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--surface);box-shadow:0 24px 70px rgba(0,0,0,.55);
+  }
+  .auth-mark{
+    width:12px;height:12px;margin-bottom:18px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 6px var(--accent-soft);
+  }
+  .auth-card h2{margin:0;font-family:var(--font-display);font-size:20px;font-weight:600;}
+  .auth-card p{margin:7px 0 20px;color:var(--text-muted);font-size:12px;line-height:1.65;}
+  .auth-form{display:flex;flex-direction:column;gap:10px;}
+  .auth-form label{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);}
+  .auth-form input{
+    width:100%;min-height:42px;padding:9px 11px;border:1px solid var(--border);
+    border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:var(--font-mono);
+  }
+  .auth-error{margin:0!important;color:#fda4af!important;font-size:11px!important;}
+  .auth-error[hidden]{display:none;}
+
   /* ---------- footer / toast ---------- */
   .footer{
     max-width:1280px;margin:0 auto;padding:16px 24px;color:var(--text-faint);font-size:12px;
     border-top:1px solid var(--border-soft);width:100%;flex-shrink:0;
+    transition:width .22s ease,margin .22s ease;
   }
   .toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:200;max-width:320px;}
   .toast{
@@ -286,7 +434,21 @@
   }
 </style>
 </head>
-<body>
+<body class="auth-locked">
+
+<div class="auth-gate" id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <form class="auth-card auth-form" id="authForm">
+    <span class="auth-mark"></span>
+    <div>
+      <h2 id="authTitle">访问验证</h2>
+      <p>请输入部署时设置的访问密码，验证通过后才能加载 VPNGate 节点和订阅收藏夹。</p>
+    </div>
+    <label for="authTokenInput">访问密码</label>
+    <input id="authTokenInput" type="password" autocomplete="current-password" spellcheck="false" placeholder="输入 ADMIN_TOKEN" required />
+    <p class="auth-error" id="authError" role="alert" hidden></p>
+    <button class="btn btn-primary" id="authSubmitBtn" type="submit">进入</button>
+  </form>
+</div>
 
 <header class="topbar">
   <div class="brand">
@@ -297,7 +459,7 @@
     </div>
   </div>
   <div class="status-cluster">
-    <span id="statusText">正在连接 vpngate.net…</span>
+    <span id="statusText">等待访问验证…</span>
     <button id="refreshBtn" class="btn btn-sm">↻ 刷新</button>
   </div>
 </header>
@@ -314,7 +476,11 @@
   </select>
   <span class="spacer"></span>
   <span class="count-badge" id="countBadge">0 个节点</span>
-  <button id="bulkExportBtn" class="btn" disabled>批量导出 Mihomo (0)</button>
+  <span class="toolbar-actions">
+    <button id="bulkExportBtn" class="btn" disabled>批量导出 Mihomo (0)</button>
+    <button id="bulkAddFavoriteBtn" class="btn" disabled>加入收藏夹 (0)</button>
+    <button id="favoriteManagerBtn" class="btn">收藏夹 ›</button>
+  </span>
 </div>
 
 <div class="table-head-fixed" id="tableHeadFixed">
@@ -351,6 +517,70 @@
   · Mihomo OpenVPN 字段参考 <a href="https://wiki.metacubex.one/config/proxies/openvpn/" target="_blank" rel="noopener">wiki.metacubex.one</a>
   · 本工具与上述项目均无官方关联,仅为第三方转换/浏览界面
 </footer>
+
+<!-- 页面右侧收藏夹抽屉 -->
+<aside class="favorite-drawer" id="favoriteDrawer" aria-hidden="true">
+  <div class="drawer-header">
+    <h2>订阅收藏夹</h2>
+    <button class="icon-btn" id="favoriteDrawerClose" aria-label="收起收藏夹">×</button>
+  </div>
+  <div class="drawer-controls">
+    <div class="drawer-switch-row">
+      <select id="favoriteDrawerSelect" aria-label="当前收藏夹"></select>
+      <div class="drawer-icon-actions" aria-label="收藏夹操作">
+        <button class="drawer-icon-btn primary" id="favoriteDrawerAddBtn" title="新建收藏夹" aria-label="新建收藏夹">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="drawer-icon-btn" id="favoriteDrawerEditBtn" title="编辑当前收藏夹" aria-label="编辑当前收藏夹">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 6.5l4 4M5 19l3.7-.8L18.5 8.4a1.5 1.5 0 0 0 0-2.1l-.8-.8a1.5 1.5 0 0 0-2.1 0L5.8 15.3 5 19z"/></svg>
+        </button>
+        <button class="drawer-icon-btn danger" id="favoriteDrawerDeleteBtn" title="删除当前收藏夹" aria-label="删除当前收藏夹">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="drawer-url-row">
+      <span class="drawer-url" id="favoriteDrawerUrl">尚未创建收藏夹</span>
+      <button class="drawer-copy-icon" id="favoriteDrawerCopyBtn" title="复制订阅地址" aria-label="复制订阅地址" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+      </button>
+    </div>
+    <form class="drawer-editor" id="favoriteDrawerForm" hidden>
+      <div class="drawer-editor-head">
+        <span class="drawer-editor-title" id="favoriteDrawerEditorTitle">新建收藏夹</span>
+        <div class="drawer-editor-actions">
+          <button type="button" class="drawer-icon-btn" id="favoriteDrawerEditorCancelBtn" title="取消" aria-label="取消">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+          <button type="submit" class="drawer-icon-btn primary" id="favoriteDrawerEditorSaveBtn" title="保存" aria-label="保存">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.2 4.2L19 7"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="drawer-editor-fields">
+        <div class="drawer-editor-field">
+          <label for="favoriteDrawerNameInput">收藏夹名称</label>
+          <input id="favoriteDrawerNameInput" maxlength="60" placeholder="日本高速节点" required />
+        </div>
+        <div class="drawer-editor-field">
+          <label for="favoriteDrawerSlugInput">订阅地址后缀</label>
+          <input id="favoriteDrawerSlugInput" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9_\-]{0,63}" placeholder="japan-fast" required />
+        </div>
+      </div>
+      <div class="drawer-editor-preview" id="favoriteDrawerUrlPreview"></div>
+    </form>
+  </div>
+  <div id="favoriteDrawerError" class="storage-message drawer-storage-error" hidden></div>
+  <div class="drawer-batchbar" id="favoriteDrawerBatchbar">
+    <label class="drawer-select-all">
+      <input type="checkbox" id="favoriteDrawerSelectAll" />
+      <span id="favoriteDrawerSelectionText">全选</span>
+    </label>
+    <button class="btn btn-sm" id="favoriteDrawerRemoveBtn" disabled>移除选中</button>
+    <button class="btn btn-sm" id="favoriteDrawerClearBtn" disabled>清空</button>
+  </div>
+  <div class="drawer-node-list" id="favoriteDrawerNodes"></div>
+</aside>
 
 <!-- 单节点详情弹窗 -->
 <div class="modal-overlay" id="modalOverlay" hidden>
@@ -403,6 +633,22 @@
         <button class="btn btn-sm" id="downloadBulkBtn">下载 .yaml</button>
       </div>
       <textarea id="bulkText" spellcheck="false"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 选择要加入的收藏夹 -->
+<div class="modal-overlay" id="favoritePickerOverlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2>加入订阅收藏夹</h2>
+        <div class="sub" id="favoritePickerSub"></div>
+      </div>
+      <button class="icon-btn" id="favoritePickerClose" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="favoritePickerList" class="favorite-list"></div>
     </div>
   </div>
 </div>
@@ -707,6 +953,13 @@
     sortValue: 'score-desc',
     selected: new Set(),
     updatedAt: null,
+    favorites: [],
+    favoritesError: '',
+    editingFavoriteId: null,
+    pendingFavoriteServers: [],
+    activeFavoriteId: '',
+    drawerSelectedKeys: new Set(),
+    appStarted: false,
   };
 
   const el = (id) => document.getElementById(id);
@@ -717,11 +970,10 @@
     el('statusText').textContent = force ? '正在强制刷新…' : '正在连接 vpngate.net…';
     hideBanner();
     try {
-      const res = await fetch('/api/servers' + (force ? '?refresh=1' : ''), { cache: 'no-store' });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.message || ('HTTP ' + res.status));
-      }
+      const data = await apiRequest(
+        '/api/servers' + (force ? '?refresh=1' : ''),
+        { method: 'GET', cache: 'no-store' }
+      );
       state.servers = (data.servers || []).map((s) => {
         try {
           const raw = safeDecodeBase64(s.configDataBase64);
@@ -742,6 +994,7 @@
     } catch (err) {
       el('statusText').innerHTML = '<span class="dot-bad">●</span> 连接失败';
       el('loadingRow').hidden = true;
+      if (err.status === 401) return;
       showBanner('无法获取 vpngate.net 的节点列表: ' + escapeHtml(err.message) + '。这可能是网络问题或该站点暂时无法访问,请稍后点击右上角"刷新"重试。');
     } finally {
       el('refreshBtn').disabled = false;
@@ -756,6 +1009,382 @@
   }
   function hideBanner() {
     el('banner').hidden = true;
+  }
+
+  // ==================== 订阅收藏夹 ====================
+  function getAdminToken() {
+    try {
+      return sessionStorage.getItem('vpngateAdminToken') || '';
+    } catch (err) {
+      return '';
+    }
+  }
+
+  function saveAdminToken(token) {
+    try {
+      sessionStorage.setItem('vpngateAdminToken', token);
+    } catch (err) {
+      // 浏览器禁用会话存储时,密钥只用于当前一次请求。
+    }
+  }
+
+  function clearAdminToken() {
+    try {
+      sessionStorage.removeItem('vpngateAdminToken');
+    } catch (err) {
+      // 会话存储不可用时无需额外处理。
+    }
+  }
+
+  function showAuthGate(message) {
+    clearAdminToken();
+    document.body.classList.add('auth-locked');
+    el('authGate').hidden = false;
+    el('authTokenInput').value = '';
+    el('authError').textContent = message || '';
+    el('authError').hidden = !message;
+    el('authSubmitBtn').disabled = false;
+    el('authSubmitBtn').textContent = '进入';
+    el('statusText').textContent = '等待访问验证…';
+    setFavoriteDrawerOpen(false);
+    requestAnimationFrame(() => el('authTokenInput').focus());
+  }
+
+  function startApplication() {
+    if (state.appStarted) return;
+    state.appStarted = true;
+    updateDrawerFavoriteUrlPreview();
+    loadFavorites();
+    fetchServers(false);
+  }
+
+  function unlockApplication() {
+    el('authGate').hidden = true;
+    document.body.classList.remove('auth-locked');
+    el('authError').hidden = true;
+    if (state.appStarted) {
+      updateDrawerFavoriteUrlPreview();
+      loadFavorites();
+      fetchServers(false);
+    } else {
+      startApplication();
+    }
+  }
+
+  async function verifyAccessToken(token) {
+    const headers = {};
+    if (token) headers.authorization = 'Bearer ' + token;
+    const res = await fetch('/api/auth/verify', {
+      method: 'GET',
+      headers,
+      cache: 'no-store',
+    });
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (err) {
+      data = {};
+    }
+    if (!res.ok || data.error) {
+      const error = new Error(data.message || '访问密码不正确');
+      error.status = res.status;
+      throw error;
+    }
+    return data;
+  }
+
+  async function initializeAccess() {
+    const storedToken = getAdminToken();
+    try {
+      const access = await verifyAccessToken(storedToken);
+      if (!access.protected) clearAdminToken();
+      unlockApplication();
+    } catch (err) {
+      showAuthGate(storedToken ? '已保存的访问密码已失效，请重新输入。' : '');
+    }
+  }
+
+  async function apiRequest(path, options) {
+    const opts = Object.assign({}, options || {});
+    opts.headers = Object.assign({ 'content-type': 'application/json' }, opts.headers || {});
+    const token = getAdminToken();
+    if (token) opts.headers.authorization = 'Bearer ' + token;
+
+    const res = await fetch(path, opts);
+    let data;
+    try {
+      data = await res.json();
+    } catch (err) {
+      data = { error: true, message: '服务器返回了无法识别的响应' };
+    }
+
+    if (res.status === 401) {
+      showAuthGate('访问密码已失效或不正确，请重新输入。');
+    }
+    if (!res.ok || data.error) {
+      const error = new Error(data.message || ('HTTP ' + res.status));
+      error.status = res.status;
+      error.code = data.code || '';
+      throw error;
+    }
+    return data;
+  }
+
+  async function loadFavorites() {
+    try {
+      const data = await apiRequest('/api/favorites', { method: 'GET' });
+      state.favorites = data.favorites || [];
+      state.favoritesError = '';
+    } catch (err) {
+      state.favorites = [];
+      state.favoritesError = err.message;
+    }
+    renderFavoriteDrawer();
+  }
+
+  function buildSubscriptionUrl(slug) {
+    const url = new URL(window.location.href);
+    const token = getAdminToken();
+    url.pathname =
+      (token ? '/' + encodeURIComponent(token) : '') +
+      '/sub/' + encodeURIComponent(slug);
+    url.search = '';
+    url.hash = '';
+    return url.href;
+  }
+
+  function subscriptionUrl(favorite) {
+    return buildSubscriptionUrl(favorite.slug);
+  }
+
+  function syncFavorite(favorite) {
+    const index = state.favorites.findIndex((item) => item.id === favorite.id);
+    if (index === -1) state.favorites.push(favorite);
+    else state.favorites[index] = favorite;
+    renderFavoriteDrawer();
+  }
+
+  function activeFavorite() {
+    let favorite = state.favorites.find((item) => item.id === state.activeFavoriteId);
+    if (!favorite && state.favorites.length > 0) {
+      favorite = state.favorites[0];
+      state.activeFavoriteId = favorite.id;
+      state.drawerSelectedKeys.clear();
+    }
+    return favorite || null;
+  }
+
+  function setFavoriteDrawerOpen(open) {
+    const drawer = el('favoriteDrawer');
+    drawer.classList.toggle('open', open);
+    drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+    document.body.classList.toggle('favorite-drawer-open', open);
+    if (!open) closeDrawerFavoriteEditor();
+    renderFavoriteDrawer();
+  }
+
+  async function openFavoriteDrawer(favoriteId) {
+    if (favoriteId) state.activeFavoriteId = favoriteId;
+    state.drawerSelectedKeys.clear();
+    if (state.favoritesError || state.favorites.length === 0) await loadFavorites();
+    setFavoriteDrawerOpen(true);
+  }
+
+  function renderFavoriteDrawer() {
+    const drawer = el('favoriteDrawer');
+    const isOpen = drawer.classList.contains('open');
+    el('favoriteManagerBtn').textContent =
+      '收藏夹' + (state.favorites.length ? ' (' + state.favorites.length + ')' : '') + (isOpen ? ' ‹' : ' ›');
+
+    const errorBox = el('favoriteDrawerError');
+    if (state.favoritesError) {
+      errorBox.textContent = state.favoritesError;
+      errorBox.hidden = false;
+    } else {
+      errorBox.hidden = true;
+    }
+
+    const select = el('favoriteDrawerSelect');
+    select.innerHTML = state.favorites.length
+      ? state.favorites.map((favorite) => (
+          '<option value="' + escapeHtml(favorite.id) + '">' +
+            escapeHtml(favorite.name) + ' (' + favorite.nodeCount + ')' +
+          '</option>'
+        )).join('')
+      : '<option value="">还没有收藏夹</option>';
+    select.disabled = state.favorites.length === 0;
+
+    const favorite = activeFavorite();
+    el('favoriteDrawerAddBtn').disabled = Boolean(state.favoritesError);
+    el('favoriteDrawerEditBtn').disabled = !favorite;
+    el('favoriteDrawerDeleteBtn').disabled = !favorite;
+    if (!favorite) {
+      el('favoriteDrawerUrl').textContent = state.favoritesError ? '收藏夹存储不可用' : '请先创建一个收藏夹';
+      el('favoriteDrawerCopyBtn').disabled = true;
+      el('favoriteDrawerBatchbar').hidden = true;
+      el('favoriteDrawerNodes').innerHTML =
+        '<div class="drawer-empty"><strong>暂无收藏夹</strong>点击上方“+”创建第一个订阅收藏夹。</div>';
+      return;
+    }
+
+    select.value = favorite.id;
+    el('favoriteDrawerUrl').textContent = subscriptionUrl(favorite);
+    el('favoriteDrawerCopyBtn').disabled = false;
+    el('favoriteDrawerBatchbar').hidden = false;
+
+    const nodes = favorite.nodes || [];
+    const validKeys = new Set(nodes.map((node) => node.key));
+    state.drawerSelectedKeys = new Set(
+      Array.from(state.drawerSelectedKeys).filter((key) => validKeys.has(key))
+    );
+    const selectedCount = state.drawerSelectedKeys.size;
+    const selectAll = el('favoriteDrawerSelectAll');
+    selectAll.checked = nodes.length > 0 && selectedCount === nodes.length;
+    selectAll.indeterminate = selectedCount > 0 && selectedCount < nodes.length;
+    selectAll.disabled = nodes.length === 0;
+    el('favoriteDrawerSelectionText').textContent =
+      selectedCount > 0 ? '已选 ' + selectedCount + ' / ' + nodes.length : '全选 ' + nodes.length + ' 个节点';
+    el('favoriteDrawerRemoveBtn').disabled = selectedCount === 0;
+    el('favoriteDrawerClearBtn').disabled = nodes.length === 0;
+
+    if (nodes.length === 0) {
+      el('favoriteDrawerNodes').innerHTML =
+        '<div class="drawer-empty"><strong>收藏夹还是空的</strong>在左侧节点列表中点击“收藏”，或勾选后批量加入。</div>';
+      return;
+    }
+
+    el('favoriteDrawerNodes').innerHTML = nodes.map((node) => (
+      '<label class="drawer-node">' +
+        '<input type="checkbox" class="drawer-node-check" data-key="' + escapeHtml(node.key) + '" ' +
+          (state.drawerSelectedKeys.has(node.key) ? 'checked' : '') + ' />' +
+        '<span class="drawer-node-main">' +
+          '<span class="drawer-node-ip">' + flagEmoji(node.countryShort) + ' ' + escapeHtml(node.ip || '未知 IP') + '</span>' +
+          '<span class="drawer-node-meta">' + escapeHtml(node.hostName || node.key) + '</span>' +
+        '</span>' +
+        '<span class="drawer-node-country">' + escapeHtml(node.countryShort || '??') + '</span>' +
+      '</label>'
+    )).join('');
+  }
+
+  async function removeFavoriteNodes(favorite, keys, confirmation, successMessage) {
+    if (!favorite || !keys.length) return;
+    if (confirmation && !window.confirm(confirmation)) return;
+    try {
+      const data = await apiRequest(
+        '/api/favorites/' + encodeURIComponent(favorite.id) + '/nodes',
+        { method: 'DELETE', body: JSON.stringify({ keys }) }
+      );
+      state.drawerSelectedKeys.clear();
+      syncFavorite(data.favorite);
+      showToast(successMessage || '已从收藏夹移除 ' + data.removed + ' 个节点', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  function closeDrawerFavoriteEditor() {
+    state.editingFavoriteId = null;
+    el('favoriteDrawerForm').reset();
+    el('favoriteDrawerForm').hidden = true;
+    updateDrawerFavoriteUrlPreview();
+  }
+
+  function openDrawerFavoriteEditor(favorite) {
+    if (state.favoritesError) {
+      showToast(state.favoritesError, 'error');
+      return;
+    }
+    state.editingFavoriteId = favorite ? favorite.id : null;
+    el('favoriteDrawerEditorTitle').textContent = favorite ? '编辑收藏夹' : '新建收藏夹';
+    el('favoriteDrawerNameInput').value = favorite ? favorite.name : '';
+    el('favoriteDrawerSlugInput').value = favorite ? favorite.slug : '';
+    el('favoriteDrawerForm').hidden = false;
+    updateDrawerFavoriteUrlPreview();
+    el('favoriteDrawerNameInput').focus();
+  }
+
+  function updateDrawerFavoriteUrlPreview() {
+    const slug = (el('favoriteDrawerSlugInput').value || 'your-suffix').trim().toLowerCase();
+    el('favoriteDrawerUrlPreview').textContent = buildSubscriptionUrl(slug);
+  }
+
+  function renderFavoritePicker() {
+    if (state.favorites.length === 0) {
+      el('favoritePickerList').innerHTML =
+        '<div class="empty" style="margin:24px 0">还没有收藏夹。</div>' +
+        '<button class="btn btn-primary" id="pickerCreateFavoriteBtn">先新建收藏夹</button>';
+      return;
+    }
+    el('favoritePickerList').innerHTML = state.favorites.map((favorite) => (
+      '<button class="btn favorite-choice" data-id="' + escapeHtml(favorite.id) + '">' +
+        '<span><strong>' + escapeHtml(favorite.name) + '</strong><small>/sub/' + escapeHtml(favorite.slug) + '</small></span>' +
+        '<span class="count-badge">' + favorite.nodeCount + ' 个节点</span>' +
+      '</button>'
+    )).join('');
+  }
+
+  async function openFavoritePicker(servers) {
+    state.pendingFavoriteServers = servers.slice();
+    if (state.favoritesError || state.favorites.length === 0) await loadFavorites();
+    el('favoritePickerSub').textContent = '将 ' + servers.length + ' 个节点加入哪个收藏夹?';
+    renderFavoritePicker();
+    showModal('favoritePickerOverlay');
+  }
+
+  async function addPendingServersToFavorite(favoriteId) {
+    const servers = state.pendingFavoriteServers;
+    if (!servers.length) return;
+    try {
+      const data = await apiRequest(
+        '/api/favorites/' + encodeURIComponent(favoriteId) + '/nodes',
+        { method: 'POST', body: JSON.stringify({ servers }) }
+      );
+      state.activeFavoriteId = data.favorite.id;
+      state.drawerSelectedKeys.clear();
+      syncFavorite(data.favorite);
+      hideModal('favoritePickerOverlay');
+      setFavoriteDrawerOpen(true);
+      showToast('已将 ' + servers.length + ' 个节点加入「' + data.favorite.name + '」', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function saveFavoriteFromDrawerForm() {
+    const payload = {
+      name: el('favoriteDrawerNameInput').value.trim(),
+      slug: el('favoriteDrawerSlugInput').value.trim().toLowerCase(),
+    };
+    const editingId = state.editingFavoriteId;
+    try {
+      const data = await apiRequest(
+        editingId ? '/api/favorites/' + encodeURIComponent(editingId) : '/api/favorites',
+        { method: editingId ? 'PUT' : 'POST', body: JSON.stringify(payload) }
+      );
+      state.activeFavoriteId = data.favorite.id;
+      closeDrawerFavoriteEditor();
+      syncFavorite(data.favorite);
+      showToast(editingId ? '收藏夹已更新' : '收藏夹已创建', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function deleteFavorite(favorite) {
+    if (!window.confirm('确定删除收藏夹「' + favorite.name + '」吗? 对应订阅地址会立即失效。')) return;
+    try {
+      await apiRequest('/api/favorites/' + encodeURIComponent(favorite.id), { method: 'DELETE' });
+      state.favorites = state.favorites.filter((item) => item.id !== favorite.id);
+      if (state.editingFavoriteId === favorite.id) closeDrawerFavoriteEditor();
+      if (state.activeFavoriteId === favorite.id) {
+        state.activeFavoriteId = state.favorites.length ? state.favorites[0].id : '';
+        state.drawerSelectedKeys.clear();
+      }
+      renderFavoriteDrawer();
+      showToast('收藏夹已删除', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   // ==================== 筛选 / 排序 / 渲染 ====================
@@ -859,6 +1488,7 @@
         '<span class="cell cell-message" data-label="说明" title="' + msgSafe + '">' + msgSafe + '</span>' +
         '<span class="cell cell-protocol" data-label="协议"><span class="proto-badge proto-' + proto + '">' + proto.toUpperCase() + '</span></span>' +
         '<span class="cell cell-actions" data-label="">' +
+          '<button class="btn btn-sm add-favorite-btn" data-key="' + escapeHtml(k) + '">收藏</button>' +
           '<button class="btn btn-sm view-ovpn-btn" data-key="' + escapeHtml(k) + '">OpenVPN</button>' +
           '<button class="btn btn-sm view-mihomo-btn" data-key="' + escapeHtml(k) + '">Mihomo</button>' +
         '</span>' +
@@ -872,6 +1502,9 @@
     const bulkBtn = el('bulkExportBtn');
     bulkBtn.textContent = '批量导出 Mihomo (' + selCount + ')';
     bulkBtn.disabled = selCount === 0;
+    const bulkFavoriteBtn = el('bulkAddFavoriteBtn');
+    bulkFavoriteBtn.textContent = '加入收藏夹 (' + selCount + ')';
+    bulkFavoriteBtn.disabled = selCount === 0;
 
     const allChecked = state.filtered.length > 0 && state.filtered.every((s) => state.selected.has(keyOf(s)));
     el('selectAllCheckbox').checked = allChecked;
@@ -1001,6 +1634,27 @@
 
   // ==================== 事件绑定 ====================
   function wireEvents() {
+    el('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = el('authTokenInput').value.trim();
+      if (!token) return;
+      el('authSubmitBtn').disabled = true;
+      el('authSubmitBtn').textContent = '正在验证…';
+      el('authError').hidden = true;
+      try {
+        await verifyAccessToken(token);
+        saveAdminToken(token);
+        unlockApplication();
+      } catch (err) {
+        el('authError').textContent = err.message || '访问密码不正确';
+        el('authError').hidden = false;
+        el('authTokenInput').select();
+      } finally {
+        el('authSubmitBtn').disabled = false;
+        el('authSubmitBtn').textContent = '进入';
+      }
+    });
+
     el('refreshBtn').addEventListener('click', () => fetchServers(true));
 
     el('searchInput').addEventListener('input', (e) => {
@@ -1027,6 +1681,83 @@
     });
 
     el('bulkExportBtn').addEventListener('click', openBulkModal);
+    el('bulkAddFavoriteBtn').addEventListener('click', () => {
+      const servers = state.servers.filter((s) => state.selected.has(keyOf(s)));
+      openFavoritePicker(servers);
+    });
+    el('favoriteManagerBtn').addEventListener('click', () => {
+      const isOpen = el('favoriteDrawer').classList.contains('open');
+      if (isOpen) setFavoriteDrawerOpen(false);
+      else openFavoriteDrawer();
+    });
+
+    // 页面右侧收藏夹抽屉
+    el('favoriteDrawerClose').addEventListener('click', () => setFavoriteDrawerOpen(false));
+    el('favoriteDrawerAddBtn').addEventListener('click', () => {
+      openDrawerFavoriteEditor(null);
+    });
+    el('favoriteDrawerEditBtn').addEventListener('click', () => {
+      const favorite = activeFavorite();
+      if (favorite) openDrawerFavoriteEditor(favorite);
+    });
+    el('favoriteDrawerDeleteBtn').addEventListener('click', () => {
+      const favorite = activeFavorite();
+      if (favorite) deleteFavorite(favorite);
+    });
+    el('favoriteDrawerSelect').addEventListener('change', (e) => {
+      state.activeFavoriteId = e.target.value;
+      state.drawerSelectedKeys.clear();
+      closeDrawerFavoriteEditor();
+      renderFavoriteDrawer();
+    });
+    el('favoriteDrawerCopyBtn').addEventListener('click', () => {
+      const favorite = activeFavorite();
+      if (favorite) copyText(subscriptionUrl(favorite), '订阅地址已复制');
+    });
+    el('favoriteDrawerForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveFavoriteFromDrawerForm();
+    });
+    el('favoriteDrawerSlugInput').addEventListener('input', updateDrawerFavoriteUrlPreview);
+    el('favoriteDrawerEditorCancelBtn').addEventListener('click', closeDrawerFavoriteEditor);
+    el('favoriteDrawerNodes').addEventListener('change', (e) => {
+      if (!e.target.classList.contains('drawer-node-check')) return;
+      const key = e.target.getAttribute('data-key');
+      if (e.target.checked) state.drawerSelectedKeys.add(key);
+      else state.drawerSelectedKeys.delete(key);
+      renderFavoriteDrawer();
+    });
+    el('favoriteDrawerSelectAll').addEventListener('change', (e) => {
+      const favorite = activeFavorite();
+      state.drawerSelectedKeys.clear();
+      if (favorite && e.target.checked) {
+        (favorite.nodes || []).forEach((node) => state.drawerSelectedKeys.add(node.key));
+      }
+      renderFavoriteDrawer();
+    });
+    el('favoriteDrawerRemoveBtn').addEventListener('click', () => {
+      const favorite = activeFavorite();
+      const keys = Array.from(state.drawerSelectedKeys);
+      if (!favorite || keys.length === 0) return;
+      removeFavoriteNodes(
+        favorite,
+        keys,
+        '确定从「' + favorite.name + '」移除选中的 ' + keys.length + ' 个节点吗?',
+        '已移除选中的 ' + keys.length + ' 个节点'
+      );
+    });
+    el('favoriteDrawerClearBtn').addEventListener('click', () => {
+      const favorite = activeFavorite();
+      if (!favorite) return;
+      const keys = (favorite.nodes || []).map((node) => node.key);
+      if (keys.length === 0) return;
+      removeFavoriteNodes(
+        favorite,
+        keys,
+        '确定清空收藏夹「' + favorite.name + '」吗? 此操作会移除其中全部 ' + keys.length + ' 个节点。',
+        '收藏夹已清空'
+      );
+    });
 
     // 事件委托: 行内 checkbox 与 "查看配置" 按钮
     el('list').addEventListener('change', (e) => {
@@ -1038,13 +1769,16 @@
       }
     });
     el('list').addEventListener('click', (e) => {
+      const favoriteBtn = e.target.closest('.add-favorite-btn');
       const ovpnBtn = e.target.closest('.view-ovpn-btn');
       const mihomoBtn = e.target.closest('.view-mihomo-btn');
-      const btn = ovpnBtn || mihomoBtn;
+      const btn = favoriteBtn || ovpnBtn || mihomoBtn;
       if (!btn) return;
       const k = btn.getAttribute('data-key');
       const server = state.servers.find((s) => keyOf(s) === k);
-      if (server) openDetailModal(server, mihomoBtn ? 'mihomo' : 'ovpn');
+      if (!server) return;
+      if (favoriteBtn) openFavoritePicker([server]);
+      else openDetailModal(server, mihomoBtn ? 'mihomo' : 'ovpn');
     });
 
     // 详情弹窗
@@ -1074,10 +1808,30 @@
     el('copyBulkBtn').addEventListener('click', () => copyText(el('bulkText').value, '已复制 ' + state.selected.size + ' 个节点的 Mihomo 配置'));
     el('downloadBulkBtn').addEventListener('click', () => downloadText('vpngate-mihomo-proxies.yaml', el('bulkText').value));
 
+    // 选择收藏夹
+    el('favoritePickerClose').addEventListener('click', () => hideModal('favoritePickerOverlay'));
+    el('favoritePickerOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'favoritePickerOverlay') hideModal('favoritePickerOverlay');
+    });
+    el('favoritePickerList').addEventListener('click', (e) => {
+      const choice = e.target.closest('.favorite-choice');
+      if (choice) {
+        addPendingServersToFavorite(choice.getAttribute('data-id'));
+        return;
+      }
+      if (e.target.closest('#pickerCreateFavoriteBtn')) {
+        hideModal('favoritePickerOverlay');
+        setFavoriteDrawerOpen(true);
+        openDrawerFavoriteEditor(null);
+      }
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         hideModal('modalOverlay');
         hideModal('bulkModalOverlay');
+        hideModal('favoritePickerOverlay');
+        setFavoriteDrawerOpen(false);
       }
     });
 
@@ -1104,27 +1858,45 @@
 
     const toolbarH = toolbarEl.offsetHeight;
     headFixedEl.style.top = (topbarH + toolbarH) + 'px';
+    // 收藏夹抽屉只避让最顶部品牌栏。工具栏在桌面端会缩到抽屉左侧,
+    // 如果再把工具栏高度算进抽屉 top,右上方就会留下明显的空白黑块。
+    document.documentElement.style.setProperty('--favorite-drawer-top', topbarH + 'px');
 
     const headFixedVisible = getComputedStyle(headFixedEl).display !== 'none';
     const headFixedH = headFixedVisible ? headFixedEl.offsetHeight : 0;
-
     mainEl.style.paddingTop = (toolbarH + headFixedH) + 'px';
+    updateFavoriteDrawerBottom();
+  }
+
+  // 长列表时抽屉占满视口高度；滚动到页面末尾后，自动停在 footer 上方。
+  function updateFavoriteDrawerBottom() {
+    const footerEl = document.querySelector('.footer');
+    if (!footerEl) return;
+    const footerRect = footerEl.getBoundingClientRect();
+    const visibleFooterHeight = Math.max(
+      0,
+      Math.min(footerRect.height, window.innerHeight - footerRect.top)
+    );
+    document.documentElement.style.setProperty('--favorite-drawer-bottom', visibleFooterHeight + 'px');
   }
 
   function setupFixedOffsetWatchers() {
     updateFixedOffsets();
     window.addEventListener('resize', updateFixedOffsets);
+    window.addEventListener('scroll', updateFavoriteDrawerBottom, { passive: true });
     if (typeof ResizeObserver !== 'undefined') {
       const ro = new ResizeObserver(() => updateFixedOffsets());
       ro.observe(document.querySelector('.topbar'));
       ro.observe(document.querySelector('.toolbar'));
       ro.observe(el('listHead'));
+      ro.observe(document.querySelector('.footer'));
     }
   }
 
   wireEvents();
   setupFixedOffsetWatchers();
-  fetchServers(false);
+  updateDrawerFavoriteUrlPreview();
+  initializeAccess();
 })();
 </script>
 </body>
