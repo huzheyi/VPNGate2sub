@@ -79,6 +79,14 @@ test('favorite lifecycle produces a Mihomo subscription', async () => {
   const created = (await json(createResponse)).favorite;
   assert.equal(created.nodeCount, 0);
 
+  const emptySubscriptionResponse = await worker.fetch(
+    request('/test-secret/sub/japan-fast'),
+    env,
+    {}
+  );
+  assert.equal(emptySubscriptionResponse.status, 200);
+  assert.equal(await emptySubscriptionResponse.text(), 'proxies: []\n');
+
   const ovpn = [
     'client',
     'dev tun',
@@ -131,7 +139,7 @@ test('favorite lifecycle produces a Mihomo subscription', async () => {
   assert.equal(subscriptionResponse.status, 200);
   assert.match(subscriptionResponse.headers.get('content-type'), /text\/yaml/);
   const yaml = await subscriptionResponse.text();
-  assert.match(yaml, /^proxies:/);
+  assert.match(yaml, /^proxies:\n  - name:/);
   assert.match(yaml, /type: openvpn/);
   assert.match(yaml, /server: 203\.0\.113\.10/);
   assert.match(yaml, /ca: \|/);

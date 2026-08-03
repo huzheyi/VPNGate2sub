@@ -6,6 +6,8 @@
 // 1. 服务端拉取 https://www.vpngate.net/api/iphone/ 的 CSV 节点列表并解析为 JSON
 // 2. 提供网页界面浏览节点、预览/复制/下载 OpenVPN 原始配置
 // 3. 将 OpenVPN 配置转换为 Mihomo (Clash Meta) 的 openvpn 代理配置段,预览/复制/下载
+// 4. 通过 Cloudflare KV 管理多个订阅收藏夹,并输出 Mihomo proxy-provider YAML
+// 5. 可选的 ADMIN_TOKEN 保护页面、API 和订阅路径
 //
 // 部署方式见同目录 README.md
 
@@ -264,7 +266,9 @@ async function handleSubscription(request, env, pathToken, rawSlug) {
       // 单个节点损坏时跳过,避免整个订阅地址不可用。
     }
   }
-  const yaml = 'proxies:\n' + segments.map((segment) => indentYaml(segment, 2)).join('\n') + '\n';
+  const yaml = segments.length
+    ? 'proxies:\n' + segments.map((segment) => indentYaml(segment, 2)).join('\n') + '\n'
+    : 'proxies: []\n';
   return new Response(yaml, {
     status: 200,
     headers: {
